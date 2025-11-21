@@ -276,7 +276,7 @@ class GeodesyApp:
         """Updates the list of available points in all relevant Comboboxes."""
         self.POINT_IDS = sorted(self.COORDINATE_DATA.keys())
         
-        for key in ['combo_p1_inv', 'combo_p2_inv', 'combo_p1_fwd']:
+        for key in ['combo_p1_inv', 'combo_p2_inv', 'combo_p1_fwd', 'combo_pL', 'combo_pM', 'combo_pR']:
             if key in self.widgets:
                 combo = self.widgets[key]
                 combo['values'] = self.POINT_IDS
@@ -797,6 +797,33 @@ class GeodesyApp:
     # --- Tab 5: N-Point Calculation Setup and Logic ---
     # -----------------------------------------------------------
 
+    # --- INSERT NEW METHOD HERE ---
+
+    def _update_coords_n_point(self, event):
+        """Updates the displayed coordinates for L, M, and R based on selected IDs."""
+        points = [
+            ('combo_pL', 'coord_xL_npoint', 'coord_yL_npoint', 'L'),
+            ('combo_pM', 'coord_xM_npoint', 'coord_yM_npoint', 'M'),
+            ('combo_pR', 'coord_xR_npoint', 'coord_yR_npoint', 'R'),
+        ]
+        coord_style = {'foreground': "#607D8B"}
+        
+        for combo_key, x_key, y_key, p_char in points:
+            # Check if the combobox key exists before trying to get its value
+            if combo_key not in self.widgets:
+                continue 
+
+            p_id = self.widgets[combo_key].get()
+            if p_id in self.COORDINATE_DATA:
+                x, y = self.COORDINATE_DATA[p_id]
+                self.widgets[x_key].config(text=f"X_{p_char}: {x:.4f}", **coord_style)
+                self.widgets[y_key].config(text=f"Y_{p_char}: {y:.4f}", **coord_style)
+            else:
+                self.widgets[x_key].config(text=f"X_{p_char}: --.--", **coord_style)
+                self.widgets[y_key].config(text=f"Y_{p_char}: --.--", **coord_style)
+
+# -----------------------------------------------------------
+
     def _setup_n_point_tab(self):
         tab_n_point = ttk.Frame(self.notebook)
         self.notebook.add(tab_n_point, text='Numerisch-stabiler Algorithmus')
@@ -806,7 +833,7 @@ class GeodesyApp:
         
         row = 0
         
-        # Helper for creating input fields
+        # Helper for creating input fields (only angles)
         def create_input_field(parent, key, label, r, default_value, col=0):
             ttk.Label(parent, text=label).grid(row=r, column=col, sticky=tk.W, pady=5, padx=5)
             entry = ttk.Entry(parent, width=15)
@@ -814,37 +841,48 @@ class GeodesyApp:
             entry.insert(0, default_value)
             self.widgets[key] = entry
             # ONLY increment row if it's the first column (col=0)
-            return r + 1 if col == 0 else r
+            return r + 1 
 
         # Coordinate inputs frame
         coord_frame = ttk.LabelFrame(main_frame, text="Known Points (L, M, R)", padding=(10, 10))
         coord_frame.grid(row=row, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=10)
         row += 1
+
+        r = 0
+        # --- NEW COMBBOX AND COORDINATE DISPLAY SETUP ---
         
-        r = 0
-        # Coordinate inputs frame
-        coord_frame = ttk.LabelFrame(main_frame, text="Known Points (L, M, R)", padding=(10, 10))
-        coord_frame.grid(row=row, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=10)
-        row += 1
+        # Point L
+        ttk.Label(coord_frame, text="Punkt L:").grid(row=r, column=0, sticky=tk.W, pady=5, padx=5)
+        self.widgets['combo_pL'] = ttk.Combobox(coord_frame, values=self.POINT_IDS, state="readonly", width=12)
+        self.widgets['combo_pL'].grid(row=r, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+        self.widgets['combo_pL'].bind("<<ComboboxSelected>>", self._update_coords_n_point)
+        self.widgets['coord_xL_npoint'] = ttk.Label(coord_frame, text=f"Lx: --.--", anchor="w", foreground="#607D8B")
+        self.widgets['coord_xL_npoint'].grid(row=r, column=2, padx=5, pady=0, sticky="w")
+        self.widgets['coord_yL_npoint'] = ttk.Label(coord_frame, text=f"Ly: --.--", anchor="w", foreground="#607D8B")
+        self.widgets['coord_yL_npoint'].grid(row=r, column=3, padx=5, pady=0, sticky="w")
+        r += 1 
 
-        r = 0
-        # XL/YL pair on row r=0
-        # XL call sets r = 1 (r is incremented)
-        r = create_input_field(coord_frame, "xL", "X-Koord L:", r, "0") 
-        # YL call uses row r-1=0, but its return value (r-1) is ignored.
-        create_input_field(coord_frame, "yL", "Y-Koord L:", r - 1, "0", col=2) 
+        # Point M
+        ttk.Label(coord_frame, text="Punkt M:").grid(row=r, column=0, sticky=tk.W, pady=5, padx=5)
+        self.widgets['combo_pM'] = ttk.Combobox(coord_frame, values=self.POINT_IDS, state="readonly", width=12)
+        self.widgets['combo_pM'].grid(row=r, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+        self.widgets['combo_pM'].bind("<<ComboboxSelected>>", self._update_coords_n_point)
+        self.widgets['coord_xM_npoint'] = ttk.Label(coord_frame, text=f"Mx: --.--", anchor="w", foreground="#607D8B")
+        self.widgets['coord_xM_npoint'].grid(row=r, column=2, padx=5, pady=0, sticky="w")
+        self.widgets['coord_yM_npoint'] = ttk.Label(coord_frame, text=f"My: --.--", anchor="w", foreground="#607D8B")
+        self.widgets['coord_yM_npoint'].grid(row=r, column=3, padx=5, pady=0, sticky="w")
+        r += 1 
 
-        # XM/YM pair on row r=1
-        # XM call sets r = 2
-        r = create_input_field(coord_frame, "xM", "X-Koord M:", r, "0")
-        # YM call uses row r-1=1, its return value is ignored.
-        create_input_field(coord_frame, "yM", "Y-Koord M:", r - 1, "0", col=2) 
-
-        # XR/YR pair on row r=2
-        # XR call sets r = 3
-        r = create_input_field(coord_frame, "xR", "X-Koord R:", r, "0")
-        # YR call uses row r-1=2, its return value is ignored.
-        create_input_field(coord_frame, "yR", "Y-Koord R:", r - 1, "0", col=2)
+        # Point R
+        ttk.Label(coord_frame, text="Punkt R:").grid(row=r, column=0, sticky=tk.W, pady=5, padx=5)
+        self.widgets['combo_pR'] = ttk.Combobox(coord_frame, values=self.POINT_IDS, state="readonly", width=12)
+        self.widgets['combo_pR'].grid(row=r, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+        self.widgets['combo_pR'].bind("<<ComboboxSelected>>", self._update_coords_n_point)
+        self.widgets['coord_xR_npoint'] = ttk.Label(coord_frame, text=f"Rx: --.--", anchor="w", foreground="#607D8B")
+        self.widgets['coord_xR_npoint'].grid(row=r, column=2, padx=5, pady=0, sticky="w")
+        self.widgets['coord_yR_npoint'] = ttk.Label(coord_frame, text=f"Ry: --.--", anchor="w", foreground="#607D8B")
+        self.widgets['coord_yR_npoint'].grid(row=r, column=3, padx=5, pady=0, sticky="w")
+        r += 1
 
         # Angle inputs frame 
         angle_frame = ttk.LabelFrame(main_frame, text="Angles measured at N (in Gon)", padding=(10, 10))
@@ -853,9 +891,9 @@ class GeodesyApp:
 
         r = 0
         # Alpha is placed in row r=0, r is incremented to 1
-        r = create_input_field(angle_frame, "alpha_gon", "Alpha (Gon):", r, "0")
+        r = create_input_field(angle_frame, "alpha_gon", "α (Gon):", r, "0")
         # Beta is placed in row r-1=0 (the same row), its return value is ignored.
-        create_input_field(angle_frame, "beta_gon", "Beta (Gon):", r - 1, "0", col=2)
+        create_input_field(angle_frame, "beta_gon", "β(Gon):", r - 1, "0", col=2)
         
         # Calculate button
         calc_button = ttk.Button(main_frame, text="Berechne Punkt N (Rückwärtsschnitt)", command=self._run_n_point_calculation)
