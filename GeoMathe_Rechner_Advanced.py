@@ -249,14 +249,13 @@ class GeodesyApp:
         self.notebook.pack(pady=10, padx=10, expand=True, fill="both")
 
         # Setup all tabs
-        self._setup_point_management()
+        self._setup_point_manager()
         self._setup_inverse_tab()
         self._setup_forward_tab()
         self._setup_half_angle_tab()
         self._setup_n_point_tab()
         
         # Initial GUI synchronization
-        self._load_points_to_treeview()
         self._refresh_comboboxes()
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_change)
 
@@ -286,66 +285,132 @@ class GeodesyApp:
                         combo.set(self.POINT_IDS[0]) # Default to first point if list is not empty
                     else:
                         combo.set("") # Set to empty if list is empty
+  
+
+    def _plot_points(self):
+        """Creates a scatter plot of all points in COORDINATE_DATA."""
+        # Clear the previous plot
+        self.ax.clear()
+        
+        if not self.COORDINATE_DATA:
+            self.ax.set_title("No Points to Plot")
+            self.ax.set_xlabel("Y [m] (Easting)")
+            self.ax.set_ylabel("X [m] (Northing)")
+            self.ax.axis('equal')
+            self.canvas.draw()
+            return
+
+        # Prepare data for plotting
+        p_ids = []
+        x_coords = []
+        y_coords = []
+        for p_id, (x, y) in self.COORDINATE_DATA.items():
+            p_ids.append(p_id)
+            x_coords.append(x)
+            y_coords.append(y)
+            
+        # Create scatter plot - SWAPPED: plot Y on x-axis, X on y-axis
+        self.ax.scatter(y_coords, x_coords, label='Points', marker='o', color='tab:blue')
+        
+        # Add labels to the points - SWAPPED coordinates
+        for p_id, x, y in zip(p_ids, x_coords, y_coords):
+            # Annotate slightly offset from the point
+            self.ax.annotate(p_id, (y, x), textcoords="offset points", xytext=(5,5), ha='left')
+
+        # Configure plot appearance - SWAPPED axis labels
+        self.ax.set_title("Point Overview")
+        self.ax.set_xlabel("Y [m] (Easting)")
+        self.ax.set_ylabel("X [m] (Northing)")
+        self.ax.grid(True, linestyle=':', alpha=0.6)
+        
+        # Ensure equal scaling (CRUCIAL for geodetic visualization)
+        self.ax.axis('equal')
+        
+        # Redraw the canvas
+        self.canvas.draw()
 
     # -----------------------------------------------------------
     # --- Tab 1: Point Management Setup and Logic ---
     # -----------------------------------------------------------
 
-    def _setup_point_management(self):
-        tab_manage = ttk.Frame(self.notebook)
-        self.notebook.add(tab_manage, text='Point Management')
+    def _setup_point_manager(self):
+        tab_point_manager = ttk.Frame(self.notebook)
+        self.notebook.add(tab_point_manager, text='1. Punktverwaltung')
 
-        # Input Frame for adding/editing points (using ttk.LabelFrame for theme support)
-        input_frame_manage = ttk.LabelFrame(tab_manage, text="Add/Update Point Coordinates", padding=(10, 10))
-        input_frame_manage.pack(padx=10, pady=10, fill="x")
+        # --- Configure Grid Layout for Two Halves ---
+        tab_point_manager.grid_columnconfigure(0, weight=1) # Left half for input/list
+        tab_point_manager.grid_columnconfigure(1, weight=1) # Right half for plot
+        tab_point_manager.grid_rowconfigure(0, weight=0) # Input row: fixed size
+        tab_point_manager.grid_rowconfigure(1, weight=1) # Treeview/Plot row: expands
 
-        ttk.Label(input_frame_manage, text="Point ID:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.widgets['entry_p_id'] = ttk.Entry(input_frame_manage, width=15)
-        self.widgets['entry_p_id'].grid(row=0, column=1, padx=5, pady=5)
-
-        ttk.Label(input_frame_manage, text="X Coordinate:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.widgets['entry_x_val'] = ttk.Entry(input_frame_manage, width=15)
-        self.widgets['entry_x_val'].grid(row=1, column=1, padx=5, pady=5)
-
-        ttk.Label(input_frame_manage, text="Y Coordinate:").grid(row=1, column=2, padx=5, pady=5, sticky="w")
-        self.widgets['entry_y_val'] = ttk.Entry(input_frame_manage, width=15)
-        self.widgets['entry_y_val'].grid(row=1, column=3, padx=5, pady=5)
-
-        # Using ttk.Button for themed look
-        btn_add_update = ttk.Button(input_frame_manage, text="Add/Update Point", command=self._add_update_point)
-        btn_add_update.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
-
-        btn_delete = ttk.Button(input_frame_manage, text="Delete Selected Point", command=self._delete_selected_point)
-        btn_delete.grid(row=0, column=3, padx=5, pady=5, sticky="ew")
-
-        # Display Frame for points (Treeview)
-        display_frame_manage = ttk.LabelFrame(tab_manage, text="Current Points (Select to Edit)", padding=(10, 10))
-        display_frame_manage.pack(padx=10, pady=10, fill="both", expand=True)
-
-        # Scrollbar for Treeview
-        tree_scroll = ttk.Scrollbar(display_frame_manage)
-        tree_scroll.pack(side="right", fill="y")
-
-        self.widgets['tree_points'] = ttk.Treeview(display_frame_manage, columns=("ID", "X", "Y"), show="headings", yscrollcommand=tree_scroll.set)
-        self.widgets['tree_points'].heading("ID", text="Point ID")
-        self.widgets['tree_points'].heading("X", text="X (Northing)")
-        self.widgets['tree_points'].heading("Y", text="Y (Easting)")
-        self.widgets['tree_points'].column("ID", width=100, anchor="center")
-        self.widgets['tree_points'].column("X", width=150, anchor="e")
-        self.widgets['tree_points'].column("Y", width=150, anchor="e")
-        self.widgets['tree_points'].pack(fill="both", expand=True)
-        self.widgets['tree_points'].bind("<<TreeviewSelect>>", self._select_point_from_tree)
+        # --- LEFT HALF: INPUT (Fixed widget keys) ---
         
-        tree_scroll.config(command=self.widgets['tree_points'].yview)
+        input_frame = ttk.LabelFrame(tab_point_manager, text="Point Input", padding=(10, 10))
+        input_frame.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.E), padx=10, pady=10)
 
-    def _load_points_to_treeview(self):
-        """Clears and reloads all points from COORDINATE_DATA into the Treeview."""
-        tree_points = self.widgets['tree_points']
-        for i in tree_points.get_children():
-            tree_points.delete(i)
-            
-        for name, (x, y) in self.COORDINATE_DATA.items():
-            tree_points.insert("", "end", iid=name, values=(name, f"{x:.4f}", f"{y:.4f}"))
+        # Point ID
+        ttk.Label(input_frame, text="Point ID:").grid(row=0, column=0, sticky=tk.W, pady=5, padx=5)
+        self.widgets['entry_p_id'] = ttk.Entry(input_frame, width=15)
+        self.widgets['entry_p_id'].grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+        
+        # X Coordinate
+        ttk.Label(input_frame, text="X-Coordinate:").grid(row=1, column=0, sticky=tk.W, pady=5, padx=5)
+        self.widgets['entry_x_val'] = ttk.Entry(input_frame, width=15)
+        self.widgets['entry_x_val'].grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+        self.widgets['entry_x_val'].insert(0, "0")
+        
+        # Y Coordinate
+        ttk.Label(input_frame, text="Y-Coordinate:").grid(row=1, column=2, sticky=tk.W, pady=5, padx=5)
+        self.widgets['entry_y_val'] = ttk.Entry(input_frame, width=15)
+        self.widgets['entry_y_val'].grid(row=1, column=3, sticky=(tk.W, tk.E), pady=5, padx=5)
+        self.widgets['entry_y_val'].insert(0, "0")
+        
+        button_frame = ttk.Frame(input_frame)
+        button_frame.grid(row=2, column=0, columnspan=4, pady=10)
+
+        ttk.Button(button_frame, text="Add/Update Point", command=self._add_update_point).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Delete Selected Point", command=self._delete_selected_point).pack(side=tk.LEFT, padx=5)
+
+        # --- LEFT HALF: POINT LIST (Fixed widget keys) ---
+
+        current_points_frame = ttk.LabelFrame(tab_point_manager, text="Current Points", padding=(10, 10))
+        current_points_frame.grid(row=1, column=0, sticky=(tk.N, tk.S, tk.W, tk.E), padx=10, pady=10)
+        current_points_frame.grid_rowconfigure(0, weight=1)
+        current_points_frame.grid_columnconfigure(0, weight=1)
+        
+        self.widgets['tree_points'] = ttk.Treeview(current_points_frame, columns=('Point ID', 'X', 'Y'), show='tree headings', selectmode='browse')
+        self.widgets['tree_points'].heading('#0', text='')
+        self.widgets['tree_points'].heading('Point ID', text='Point ID')
+        self.widgets['tree_points'].heading('X', text='X-Coordinate')
+        self.widgets['tree_points'].heading('Y', text='Y-Coordinate')
+        
+        self.widgets['tree_points'].column('#0', width=0, stretch=False)
+        self.widgets['tree_points'].column('Point ID', width=80, anchor=tk.CENTER)
+        self.widgets['tree_points'].column('X', width=120, anchor=tk.CENTER)
+        self.widgets['tree_points'].column('Y', width=120, anchor=tk.CENTER)
+        
+        self.widgets['tree_points'].grid(row=0, column=0, sticky=(tk.N, tk.S, tk.W, tk.E))
+        self.widgets['tree_points'].bind('<<TreeviewSelect>>', self._select_point_from_tree)
+        
+        scrollbar = ttk.Scrollbar(current_points_frame, orient=tk.VERTICAL, command=self.widgets['tree_points'].yview)
+        self.widgets['tree_points'].configure(yscrollcommand=scrollbar.set)
+        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+
+        # --- RIGHT HALF: PLOT (NEW) ---
+        
+        plot_frame = ttk.LabelFrame(tab_point_manager, text="Point Overview Plot", padding=(5, 5))
+        # Spans both rows in column 1
+        plot_frame.grid(row=0, column=1, rowspan=2, sticky=(tk.N, tk.S, tk.W, tk.E), padx=10, pady=10)
+
+        # Initialize Matplotlib Figure and Canvas
+        # Use a small figsize, let the frame resize it
+        self.fig, self.ax = plt.subplots(figsize=(1, 1), dpi=100) 
+        self.canvas = FigureCanvasTkAgg(self.fig, master=plot_frame)
+        self.canvas_widget = self.canvas.get_tk_widget()
+        self.canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+        # Draw initial plot
+        self._plot_points()
 
     def _add_update_point(self):
         """Reads input fields and adds/updates a point in COORDINATE_DATA."""
@@ -362,11 +427,21 @@ class GeodesyApp:
             
             self._load_points_to_treeview()
             self._refresh_comboboxes()
+            self._plot_points()
             
         except ValueError:
             messagebox.showerror("Input Error", "Please enter valid numbers for X and Y coordinates.")
         except Exception as e:
             messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
+    def _load_points_to_treeview(self):
+        """Clears and reloads all points from COORDINATE_DATA into the Treeview."""
+        tree_points = self.widgets['tree_points']
+        for i in tree_points.get_children():
+            tree_points.delete(i)
+            
+        for name, (x, y) in self.COORDINATE_DATA.items():
+            tree_points.insert("", "end", iid=name, values=(name, f"{x:.4f}", f"{y:.4f}"))
 
     def _select_point_from_tree(self, event):
         """Loads the selected point from the Treeview back into the input fields for editing."""
@@ -380,7 +455,6 @@ class GeodesyApp:
                 self.widgets['entry_y_val'].delete(0, tk.END)
                 
                 self.widgets['entry_p_id'].insert(0, values[0])
-                # Ensure values[1] and values[2] are strings before inserting
                 self.widgets['entry_x_val'].insert(0, str(values[1]))
                 self.widgets['entry_y_val'].insert(0, str(values[2]))
             
@@ -396,6 +470,7 @@ class GeodesyApp:
                 
                 self._load_points_to_treeview()
                 self._refresh_comboboxes()
+                self._plot_points()
                 
                 self.widgets['entry_p_id'].delete(0, tk.END)
                 self.widgets['entry_x_val'].delete(0, tk.END)
@@ -409,13 +484,13 @@ class GeodesyApp:
 
     def _setup_inverse_tab(self):
         tab_inverse = ttk.Frame(self.notebook)
-        self.notebook.add(tab_inverse, text='2. Geodätische Hauptaufgabe') 
+        self.notebook.add(tab_inverse, text='2. Geodaetische Hauptaufgabe') 
 
-        input_frame_inv = ttk.LabelFrame(tab_inverse, text="Input Point IDs (P1 | P2)", padding=(10, 10))
+        input_frame_inv = ttk.LabelFrame(tab_inverse, text="Input Point IDs (Pₙ | Pₘ)", padding=(10, 10))
         input_frame_inv.pack(padx=10, pady=10, fill="x")
 
         # Point 1 (P1 ID)
-        ttk.Label(input_frame_inv, text="Point ID P₁:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(input_frame_inv, text="Point Pₙ:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.widgets['combo_p1_inv'] = ttk.Combobox(input_frame_inv, values=self.POINT_IDS, state="readonly", width=12)
         self.widgets['combo_p1_inv'].grid(row=0, column=1, padx=5, pady=5)
         self.widgets['combo_p1_inv'].set("") 
@@ -427,7 +502,7 @@ class GeodesyApp:
         self.widgets['coord_y1_inv'].grid(row=1, column=1, padx=5, pady=0, sticky="w")
 
         # Point 2 (P2 ID)
-        ttk.Label(input_frame_inv, text="Point ID P₂:").grid(row=0, column=2, padx=5, pady=5, sticky="w")
+        ttk.Label(input_frame_inv, text="Point Pₘ:").grid(row=0, column=2, padx=5, pady=5, sticky="w")
         self.widgets['combo_p2_inv'] = ttk.Combobox(input_frame_inv, values=self.POINT_IDS, state="readonly", width=12)
         self.widgets['combo_p2_inv'].grid(row=0, column=3, padx=5, pady=5)
         self.widgets['combo_p2_inv'].set("")
@@ -446,7 +521,7 @@ class GeodesyApp:
         calc_button_inv.pack(padx=10, pady=10, fill="x")
 
         # Result Frame
-        result_frame_inv = ttk.LabelFrame(tab_inverse, text="Ergebnisse(S, νₙₘ, νₘₙ)", padding=(10, 10))
+        result_frame_inv = ttk.LabelFrame(tab_inverse, text="Ergebnisse (S, νₙₘ, νₘₙ)", padding=(10, 10))
         result_frame_inv.pack(padx=10, pady=10, fill="x")
         
         # Define a style for result labels for emphasis
@@ -461,8 +536,6 @@ class GeodesyApp:
         self.widgets['result_Az12'] = ttk.Label(result_frame_inv, text="--.-- gon", width=15, anchor="w", style='Result.TLabel')
         self.widgets['result_Az12'].grid(row=1, column=1, padx=5, pady=5, sticky="w")
         
-        # Use standard Label for custom color message outside of ttk
-        # FIX: Removed the problematic 'bg=result_frame_inv['background']' argument.
         self.widgets['msg_Az12'] = tk.Label(result_frame_inv, text="", fg="#D32F2F")
         self.widgets['msg_Az12'].grid(row=1, column=2, padx=5, pady=5, sticky="w")
 
@@ -470,8 +543,6 @@ class GeodesyApp:
         self.widgets['result_Az21'] = ttk.Label(result_frame_inv, text="--.-- gon", width=15, anchor="w", style='Result.TLabel')
         self.widgets['result_Az21'].grid(row=2, column=1, padx=5, pady=5, sticky="w")
         
-        # Use standard Label for custom color message outside of ttk
-        # FIX: Removed the problematic 'bg=result_frame_inv['background']' argument.
         self.widgets['msg_Az21'] = tk.Label(result_frame_inv, text="", fg="#D32F2F")
         self.widgets['msg_Az21'].grid(row=2, column=2, padx=5, pady=5, sticky="w")
 
@@ -514,12 +585,12 @@ class GeodesyApp:
             
             S12, Az12, Az21, Az12_msg, Az21_msg = calculate_geodetic_inverse(x1, y1, x2, y2)
             
-            self.widgets['result_S12'].config(text=f"{S12:.4f} m")
+            self.widgets['result_S12'].config(text=f"{S12:.4f}")
             self.widgets['result_Az12'].config(text=f"{Az12:.4f} gon")
             self.widgets['result_Az21'].config(text=f"{Az21:.4f} gon")
 
-            self.widgets['msg_Az12'].config(text=f"ⓘ {Az12_msg}" if Az12_msg else "")
-            self.widgets['msg_Az21'].config(text=f"ⓘ {Az21_msg}" if Az21_msg else "")
+            self.widgets['msg_Az12'].config(text=f"⤷ {Az12_msg}" if Az12_msg else "")
+            self.widgets['msg_Az21'].config(text=f"⤷ {Az21_msg}" if Az21_msg else "")
             
         except Exception as e:
             messagebox.showerror("Calculation Error", f"An unexpected error occurred: {e}")
@@ -530,13 +601,13 @@ class GeodesyApp:
     
     def _setup_forward_tab(self):
         tab_forward = ttk.Frame(self.notebook)
-        self.notebook.add(tab_forward, text='1. Geodätische Hauptaufgabe')
+        self.notebook.add(tab_forward, text='1. Geodaetische Hauptaufgabe')
 
-        input_frame_fwd = ttk.LabelFrame(tab_forward, text="Input (P1 ID | Sₙₘ | νₙₘ)", padding=(10, 10))
+        input_frame_fwd = ttk.LabelFrame(tab_forward, text="Input (P ID | Sₙₘ | νₙₘ)", padding=(10, 10))
         input_frame_fwd.pack(padx=10, pady=10, fill="x")
 
         # Point 1 (P1 ID)
-        ttk.Label(input_frame_fwd, text="Point ID P₁:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(input_frame_fwd, text="Point ID Pₙ:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.widgets['combo_p1_fwd'] = ttk.Combobox(input_frame_fwd, values=self.POINT_IDS, state="readonly", width=12)
         self.widgets['combo_p1_fwd'].grid(row=0, column=1, padx=5, pady=5)
         self.widgets['combo_p1_fwd'].set("") 
@@ -561,23 +632,21 @@ class GeodesyApp:
         self.widgets['entry_Az12_fwd'].insert(0, "0") 
 
         # Calculation Button
-        calc_button_fwd = ttk.Button(tab_forward, text="Berechne 1.HA (Xₙ, Yₙ)", command=self._run_forward_calculation)
+        calc_button_fwd = ttk.Button(tab_forward, text="Berechne 1.HA (X_neu, Y_neu)", command=self._run_forward_calculation)
         calc_button_fwd.pack(padx=10, pady=10, fill="x")
 
         # Result Frame
-        result_frame_fwd = ttk.LabelFrame(tab_forward, text="Ergebnisse (P: Xₙ, Yₙ)", padding=(10, 10))
+        result_frame_fwd = ttk.LabelFrame(tab_forward, text="Ergebnisse (P: X_neu, Y_neu)", padding=(10, 10))
         result_frame_fwd.pack(padx=10, pady=10, fill="x")
 
-        ttk.Label(result_frame_fwd, text="Xₙ (Northing):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.widgets['result_xₙ'] = ttk.Label(result_frame_fwd, text="--.--", width=15, anchor="w", style='Result.TLabel')
-        self.widgets['result_xₙ'].grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        ttk.Label(result_frame_fwd, text="X_neu (Northing):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.widgets['result_x₂'] = ttk.Label(result_frame_fwd, text="--.--", width=15, anchor="w", style='Result.TLabel')
+        self.widgets['result_x₂'].grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
-        ttk.Label(result_frame_fwd, text="Yₙ (Easting):").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.widgets['result_yₙ'] = ttk.Label(result_frame_fwd, text="--.--", width=15, anchor="w", style='Result.TLabel')
-        self.widgets['result_yₙ'].grid(row=1, column=1, padx=5, pady=5, sticky="w")
+        ttk.Label(result_frame_fwd, text="Y_neu (Easting):").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.widgets['result_y₂'] = ttk.Label(result_frame_fwd, text="--.--", width=15, anchor="w", style='Result.TLabel')
+        self.widgets['result_y₂'].grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
-        # Use standard Label for custom color message outside of ttk
-        # FIX: Removed the problematic 'bg=result_frame_fwd['background']' argument.
         self.widgets['msg_Az12_fwd'] = tk.Label(result_frame_fwd, text="", fg="#D32F2F")
         self.widgets['msg_Az12_fwd'].grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
@@ -615,17 +684,17 @@ class GeodesyApp:
                 
             x2, y2, Az12_msg = calculate_geodetic_forward(x1, y1, S12, Az12_gon)
             
-            self.widgets['result_xₙ'].config(text=f"{x2:.4f} m")
-            self.widgets['result_yₙ'].config(text=f"{y2:.4f} m")
+            self.widgets['result_x₂'].config(text=f"{x2:.4f} m")
+            self.widgets['result_y₂'].config(text=f"{y2:.4f} m")
 
-            self.widgets['msg_Az12_fwd'].config(text=f"ⓘ Normalized Az: {Az12_msg}" if Az12_msg else "")
+            self.widgets['msg_Az12_fwd'].config(text=f"⤷ Normalized Az: {Az12_msg}" if Az12_msg else "")
             
         except ValueError as ve:
             messagebox.showerror("Input Error", f"Please enter valid numbers/selections: {ve}")
         except Exception as e:
             messagebox.showerror("Calculation Error", f"An unexpected error occurred: {e}")
 
-# -----------------------------------------------------------
+    # -----------------------------------------------------------
     # --- Tab 4: Half-Angle Theorem (HWS) Setup and Logic ---
     # -----------------------------------------------------------
 
@@ -756,7 +825,6 @@ class GeodesyApp:
         # --- Final Plot Styling ---
         ax.set_aspect('equal', adjustable='box')
         ax.axis('off') # Hide axes, ticks, and borders
-        #ax.set_title("Halbwinkelsatz: Bezeichnungen", fontsize=10)
         fig.tight_layout(pad=0.5)
 
         # --- Embed into Tkinter ---
@@ -797,8 +865,6 @@ class GeodesyApp:
     # --- Tab 5: N-Point Calculation Setup and Logic ---
     # -----------------------------------------------------------
 
-    # --- INSERT NEW METHOD HERE ---
-
     def _update_coords_n_point(self, event):
         """Updates the displayed coordinates for L, M, and R based on selected IDs."""
         points = [
@@ -822,8 +888,6 @@ class GeodesyApp:
                 self.widgets[x_key].config(text=f"X_{p_char}: --.--", **coord_style)
                 self.widgets[y_key].config(text=f"Y_{p_char}: --.--", **coord_style)
 
-# -----------------------------------------------------------
-
     def _setup_n_point_tab(self):
         tab_n_point = ttk.Frame(self.notebook)
         self.notebook.add(tab_n_point, text='Numerisch-stabiler Algorithmus')
@@ -832,16 +896,6 @@ class GeodesyApp:
         main_frame.pack(fill="both", expand=True)
         
         row = 0
-        
-        # Helper for creating input fields (only angles)
-        def create_input_field(parent, key, label, r, default_value, col=0):
-            ttk.Label(parent, text=label).grid(row=r, column=col, sticky=tk.W, pady=5, padx=5)
-            entry = ttk.Entry(parent, width=15)
-            entry.grid(row=r, column=col+1, sticky=(tk.W, tk.E), pady=5, padx=5)
-            entry.insert(0, default_value)
-            self.widgets[key] = entry
-            # ONLY increment row if it's the first column (col=0)
-            return r + 1 
 
         # Coordinate inputs frame
         coord_frame = ttk.LabelFrame(main_frame, text="Known Points (L, M, R)", padding=(10, 10))
@@ -849,7 +903,6 @@ class GeodesyApp:
         row += 1
 
         r = 0
-        # --- NEW COMBBOX AND COORDINATE DISPLAY SETUP ---
         
         # Point L
         ttk.Label(coord_frame, text="Punkt L:").grid(row=r, column=0, sticky=tk.W, pady=5, padx=5)
@@ -890,10 +943,17 @@ class GeodesyApp:
         row += 1
 
         r = 0
-        # Alpha is placed in row r=0, r is incremented to 1
-        r = create_input_field(angle_frame, "alpha_gon", "α (Gon):", r, "0")
-        # Beta is placed in row r-1=0 (the same row), its return value is ignored.
-        create_input_field(angle_frame, "beta_gon", "β(Gon):", r - 1, "0", col=2)
+        # Alpha
+        ttk.Label(angle_frame, text="α (Gon):").grid(row=r, column=0, sticky=tk.W, pady=5, padx=5)
+        self.widgets['alpha_gon'] = ttk.Entry(angle_frame, width=15)
+        self.widgets['alpha_gon'].grid(row=r, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+        self.widgets['alpha_gon'].insert(0, "0")
+        
+        # Beta (same row)
+        ttk.Label(angle_frame, text="β(Gon):").grid(row=r, column=2, sticky=tk.W, pady=5, padx=5)
+        self.widgets['beta_gon'] = ttk.Entry(angle_frame, width=15)
+        self.widgets['beta_gon'].grid(row=r, column=3, sticky=(tk.W, tk.E), pady=5, padx=5)
+        self.widgets['beta_gon'].insert(0, "0")
         
         # Calculate button
         calc_button = ttk.Button(main_frame, text="Berechne Punkt N (Rückwärtsschnitt)", command=self._run_n_point_calculation)
@@ -917,15 +977,28 @@ class GeodesyApp:
     def _run_n_point_calculation(self):
         """Get values from inputs and perform calculation for N-Point."""
         try:
-            # Read values from entries
-            inputs = {}
-            for key in ["xL", "yL", "xM", "yM", "xR", "yR", "alpha_gon", "beta_gon"]:
-                inputs[key] = float(self.widgets[key].get())
+            # Get point IDs from comboboxes
+            pL_id = self.widgets['combo_pL'].get()
+            pM_id = self.widgets['combo_pM'].get()
+            pR_id = self.widgets['combo_pR'].get()
+            
+            # Validate that points exist
+            if pL_id not in self.COORDINATE_DATA or pM_id not in self.COORDINATE_DATA or pR_id not in self.COORDINATE_DATA:
+                messagebox.showerror("Input Error", "Please select valid point IDs for L, M, and R.")
+                return
+            
+            # Get coordinates from dictionary
+            xL, yL = self.COORDINATE_DATA[pL_id]
+            xM, yM = self.COORDINATE_DATA[pM_id]
+            xR, yR = self.COORDINATE_DATA[pR_id]
+            
+            # Get angles from entry fields
+            alpha_gon = float(self.widgets['alpha_gon'].get())
+            beta_gon = float(self.widgets['beta_gon'].get())
             
             # Perform calculation
             result = compute_N_from_LMR_gon(
-                inputs["xL"], inputs["yL"], inputs["xM"], inputs["yM"], 
-                inputs["xR"], inputs["yR"], inputs["alpha_gon"], inputs["beta_gon"]
+                xL, yL, xM, yM, xR, yR, alpha_gon, beta_gon
             )
             
             # Display results
@@ -973,7 +1046,6 @@ class GeodesyApp:
                     self.widgets['results_text_n_point'].insert(tk.END, f"{key:15s} = {value:12.6f}\n")
                 else:
                     self.widgets['results_text_n_point'].insert(tk.END, f"{key:15s} = {value}\n")
-        
 
 
 if __name__ == "__main__":
