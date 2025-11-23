@@ -1,0 +1,10 @@
+# Icon and image files
+GeoMathe-Advanced_Rechner_Icon_256x256.png
+GeoMathe_Advanced_Rechner_Icon.ico
+
+# PyInstaller spec file
+GeoMathe_Rechner_Advanced.spec
+
+# Build directories
+build/
+dist/

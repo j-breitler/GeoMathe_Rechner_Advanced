@@ -1,6 +1,11 @@
------------------------------- GeoMathe-Rechner.READ_ME------------------------------
------------------------------- Author: Julian Breitler ------------------------------
--------------------------------------------------------------------------------------
+#-------------------- GeoMathe_Rechner_Advanced.py -----------#
+#-------------------- Author: Ai & Julian Breitler -------------#
+#------- Co-Author & Helferlein: Fenja Runfors, Klara Gössler, Christopher Stering---#
+#------------------ Viel Spaß beim Verwenden! ----------------#
+
+#-------------------------------------------------------------#
+#------------------Benützung auf eigene Gefahr !!! -----------#
+#-------------------------------------------------------------#
 
 Der hier beschriebene GeoMathe-Rechner basierd auf Python. 
 Falls ihr Python nicht installiert habt bitte installieren.
