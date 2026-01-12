@@ -32,6 +32,8 @@ Für fehlerhafte Ergebnisse oder daraus entstehende Konsequenzen wird keine Haft
 * Keine zusätzlichen Packages notwendig
 * Einfachste und sicherste Variante
 
+* **Link zu GeoMathe_Rechner_Basic** Repository: https://github.com/j-breitler/GeoMathe_Rechner_Basic.git
+
 ### 🔹 Version 2 – *GeoMathe_Rechner_Advanced*
 
 * Modernes und übersichtliches **User Interface**
@@ -39,6 +41,8 @@ Für fehlerhafte Ergebnisse oder daraus entstehende Konsequenzen wird keine Haft
 * Kann **eingebene Punkte zeichnen** und in einem Koordinatensystem darstellen (sehr **Hilfreich für Skizze!**)
 * Benötigt zusätzlich das externe Package **matplotlib**
 * Installation des Packages erfolgt je nach System manuell oder automatisch
+
+* **Link zu GeoMathe_Rechner_Basic** Repository: https://github.com/j-breitler/GeoMathe_Rechner_Advanced.git
 
 > 💡 Tipp: Wie man Python‑Packages installiert, kann einfach gegoogelt oder mithilfe einer KI nachgeschlagen werden.
 
