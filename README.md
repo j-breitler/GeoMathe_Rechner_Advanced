@@ -1,109 +1,152 @@
-#-------------------- GeoMathe_Rechner_Advanced.py -----------#
-#-------------------- Author: Ai & Julian Breitler -------------#
-#------- Co-Author & Helferlein: Fenja Runfors, Klara Gössler, Christopher Stering---#
-#------------------ Viel Spaß beim Verwenden! ----------------#
+# 📐 GeoMathe Rechner
 
-#-------------------------------------------------------------#
-#------------------Benützung auf eigene Gefahr !!! -----------#
-#-------------------------------------------------------------#
+Ein Python‑basierter Rechner für Aufgaben aus **GeoMathe 1** mit mehreren Rechenmodulen und zwei verfügbaren Versionen.
 
-Der hier beschriebene GeoMathe-Rechner basierd auf Python. 
-Falls ihr Python nicht installiert habt bitte installieren.
+---
 
-Es gibt 2 Versionen:
+## 👤 Autor:innen
 
-o Version 1 (GeoMathe_Rechner)
+* **Hauptautor:innen:** Ai & Julian Breitler
+* **Co‑Autor:innen & Unterstützung:** Fenja Runfors, Klara Gössler, Christopher Stering
 
-	Diese Version funktioniert mit der Python Standard Bibliothek,
-	das heißt man muss nur Python installiert haben. Sonst nichts.
+---
 
-o Version 2 (GeoMathe_Rechner_Advanced)
+## ⚠️ Haftungsausschluss
 
-	Diese Version hat ein schöneres User Interface (größere Schrift, cleaner, Abbildungen, usw.), benötigt aber
-	eine externe Bibliothek/Package (matplotlib).
-	Dieses Package kann auf viele verschiedene Arten installiert werden.
-	(wie man python packages installiert bitte Googln oder KI fragen)
+**Benützung auf eigene Gefahr!**
+Für fehlerhafte Ergebnisse oder daraus entstehende Konsequenzen wird keine Haftung übernommen.
 
-Öffnen des Rechners:
+---
 
-	Beide Rechner können auf mehreren Wegen geöffnet werden:
-	
-	o Direkt das .py file öffnen "Doppelklick"
-	o .py File über das Terminal/Command Zeile öffnen
-	o .py File in einem Interpreter wie VS Code/ PyCharm/ Spyder/ usw. öffnen und ausführen
-	o .exe File ausführen "Doppelklick" (nur für Advanced-Rechner, hierbei wird das benötigte matplotlib Package automatisch 		  installiert, funktioniert nur auf Windows).
+## 🛠 Voraussetzungen
 
-	Die einfachste/sicherste Lösung ist "Doppelklick" auf das .py File des einfach GeoMathe_Rechners 
-	(sollte bei jedem funktionieren sofern Python installiert ist)  
-	
-Beide Rechner sind folgender Maßen aufgebaut:
+* Installiertes **Python** (empfohlen: aktuelle Version)
 
-1. Tab 
-	
-	"Point Management" 
+---
 
-		Punkte eingeben und unter einer "Point ID" speichern. 
-		Diese gespeicherten Punkte kann man dann im 2. und 3. Tab (2.HA und 1.HA) wieder aufrufen und einsetzen.
-2. Tab
-	
-	2. Hauptaufgabe berechnen
+## 📦 Versionen
 
-		Die zuvor eingegebenen Punkte können über ein Drop-Down Menu in die 2.HA 
-		eingesetzt werden. Der Rechner führt automatisch die "modulo operation" durch falls eine orientierte Richtung
-		>400 gon oder negativ ist. Dabei wir aber immer der original Wert angezeigt und es erscheint ein Hinweis darauf
-		das die modulo operation durchgeführt wurde. 
-		Wer die Berechnung nachvollziehen will kann im Code nachschauen:
-			GeoMathe_Rechner ab Zeile: 46-66 
-			GeoMathe_Rechner_Advanced ab Zeile: 46-66 
-3. Tab
+### 🔹 Version 1 – *GeoMathe_Rechner*
 
-	1. Hauptaufgabe berechnen
+* Verwendet ausschließlich die **Python‑Standardbibliothek**
+* Keine zusätzlichen Packages notwendig
+* Einfachste und sicherste Variante
 
-		Ähnlich wie bei der 2.HA kann der Ausgangspunkt über ein Drop-Down Menu ausgewählt
-		werden. Die Strecke (S) und die orientierte Richtung (Nu) muss manuell eingetragen werden.
-		Wer die Berechnung nachvollziehen will kann im Code nachschauen:
-			GeoMathe_Rechner Zeile: 68-82
-			GeoMathe_Rechner_Advanced ab Zeile: 68-82
-4. Tab
-	
-	Halbwinkelsatz berechnen 
+### 🔹 Version 2 – *GeoMathe_Rechner_Advanced*
 
-		Da die Berechnung und das eintippen der Formel für den HWS aufwendig/fehleranfällig und
-		nervig ist, rechnet diese Funktion alle 3 Winkel des gegebenen Dreiecks aus. Dafür werden als Input die drei Seiten
-		benötigt:
-		o a
- 		o b
-		o c 
-		Wobei 
-		"alpha" gegenüber von "a" liegt, 
-		"beta" gegenüber von "b" und 
-		"gamma" gegenüber von "c".
+* Modernes und übersichtliches **User Interface**
+  (größere Schrift, sauberes Layout, Grafiken)
+* Benötigt zusätzlich das externe Package **matplotlib**
+* Installation des Packages erfolgt je nach System manuell oder automatisch
 
-		Wer die Berechnung nachvollziehen will kann im Code nachschauen:
-			GeoMathe_Rechner ab Zeile: 88-140
-			GeoMathe_Rechner_Advanced ab Zeile: 88-140
-5. Tab
+> 💡 Tipp: Wie man Python‑Packages installiert, kann einfach gegoogelt oder mithilfe einer KI nachgeschlagen werden.
 
-	Numerisch-stabilen Algorithmus berechnen
-	
-		Da die Berechnung und das eintippen der Formel für den Numerisch-stabilen Algo. aufwendig/fehleranfällig und
-		nervig ist, rechnet diese Funktion den Neupunkt Pn aus. Dabei werden auch alle Zwischenergebnisse ausgegeben
-		(Hilfsgrößen a/b, lambda, mu, s^2mn, usw.)
-		Als Input benötigt man die Koordinaten der Punkte
-		o L
-		o M
-		o R 
-		(siehe Rückwärtsschnitt im Skriptum), sowie
-		o alpha
-		o beta 
+---
 
-		Wer die Berechnung nachvollziehen will kann im Code nachschauen:
-			GeoMathe_Rechner ab Zeile: 146-210
-			GeoMathe_Rechner_Advanced ab Zeile: 146-210
+## ▶️ Starten des Rechners
 
-	
+Beide Versionen können auf mehreren Wegen gestartet werden:
 
-Ansonsten sollte alles selbsterklärend sein. Die Berechnungen basieren auf dem Skriptum von GeoMathe-1.
+* 📂 **Doppelklick** auf die `.py`‑Datei
+* 💻 Start über **Terminal / Command Line**
+* 🧠 Ausführen in einer IDE (z. B. *VS Code, PyCharm, Spyder*)
+* 🪟 **`.exe`‑Datei** per Doppelklick (nur Advanced‑Version, **Windows‑only**, installiert `matplotlib` automatisch)
 
+### ✅ Empfehlung
 
+Die einfachste und zuverlässigste Methode ist der **Doppelklick auf die `.py`‑Datei** der einfachen Version
+(*funktioniert auf allen Systemen mit installiertem Python*).
+
+---
+
+## 🧭 Programmaufbau
+
+Der Rechner ist in **fünf Tabs** gegliedert:
+
+---
+
+### 🟦 1. Tab – Point Management
+
+* Eingabe von Punkten
+* Speicherung unter einer **Point ID**
+* Gespeicherte Punkte können in **Tab 2 (2.HA)** und **Tab 3 (1.HA)** wiederverwendet werden
+
+---
+
+### 🟩 2. Tab – 2. Hauptaufgabe
+
+* Auswahl gespeicherter Punkte über ein **Dropdown‑Menü**
+* Automatische **Modulo‑Operation**, falls:
+
+  * Richtung > 400 gon
+  * Richtung negativ ist
+* Originalwert bleibt sichtbar, Hinweis zur Modulo‑Operation wird angezeigt
+
+**Code‑Referenz:**
+
+* *GeoMathe_Rechner:* Zeile 46–66
+* *GeoMathe_Rechner_Advanced:* Zeile 46–66
+
+---
+
+### 🟨 3. Tab – 1. Hauptaufgabe
+
+* Auswahl des Ausgangspunktes über Dropdown
+* Manuelle Eingabe von:
+
+  * Strecke **S**
+  * orientierter Richtung **Nu**
+
+**Code‑Referenz:**
+
+* *GeoMathe_Rechner:* Zeile 68–82
+* *GeoMathe_Rechner_Advanced:* Zeile 68–82
+
+---
+
+### 🟧 4. Tab – Halbwinkelsatz
+
+Berechnung aller **drei Winkel eines Dreiecks** mithilfe des Halbwinkelsatzes.
+
+**Benötigte Eingaben:**
+
+* Seite **a** → gegenüber von *α*
+* Seite **b** → gegenüber von *β*
+* Seite **c** → gegenüber von *γ*
+
+**Code‑Referenz:**
+
+* *GeoMathe_Rechner:* Zeile 88–140
+* *GeoMathe_Rechner_Advanced:* Zeile 88–140
+
+---
+
+### 🟥 5. Tab – Numerisch stabiler Algorithmus
+
+Berechnung des **Neupunkts Pₙ** (Rückwärtsschnitt) inklusive aller Zwischenergebnisse:
+
+* Hilfsgrößen *a / b*
+* *λ (lambda)*, *μ (mu)*
+* *s²mn* usw.
+
+**Benötigte Eingaben:**
+
+* Punkte **L**, **M**, **R**
+* Winkel **α**, **β**
+
+**Code‑Referenz:**
+
+* *GeoMathe_Rechner:* Zeile 146–210
+* *GeoMathe_Rechner_Advanced:* Zeile 146–210
+
+---
+
+## 📘 Hinweise
+
+* Die Berechnungen basieren auf dem **GeoMathe‑1‑Skriptum**
+* Der Rest der Bedienung ist weitgehend **selbsterklärend**
+
+---
+
+🎉 **Viel Spaß beim Verwenden des GeoMathe Rechners!**
 
