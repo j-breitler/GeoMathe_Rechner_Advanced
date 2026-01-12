@@ -35,7 +35,8 @@ Für fehlerhafte Ergebnisse oder daraus entstehende Konsequenzen wird keine Haft
 ### 🔹 Version 2 – *GeoMathe_Rechner_Advanced*
 
 * Modernes und übersichtliches **User Interface**
-  (größere Schrift, sauberes Layout, Grafiken)
+  (größere Schrift, sauberes Layout)
+* Kann eingebene Punkte zeichnen und in einem Koordinatensystem darstellen (sehr Hilfreich für Skizze!)
 * Benötigt zusätzlich das externe Package **matplotlib**
 * Installation des Packages erfolgt je nach System manuell oder automatisch
 
