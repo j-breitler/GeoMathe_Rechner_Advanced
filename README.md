@@ -36,7 +36,7 @@ Für fehlerhafte Ergebnisse oder daraus entstehende Konsequenzen wird keine Haft
 
 * Modernes und übersichtliches **User Interface**
   (größere Schrift, sauberes Layout)
-* Kann eingebene Punkte zeichnen und in einem Koordinatensystem darstellen (sehr Hilfreich für Skizze!)
+* Kann **eingebene Punkte zeichnen** und in einem Koordinatensystem darstellen (sehr **Hilfreich für Skizze!**)
 * Benötigt zusätzlich das externe Package **matplotlib**
 * Installation des Packages erfolgt je nach System manuell oder automatisch
 
