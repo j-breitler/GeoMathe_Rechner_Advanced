@@ -42,7 +42,7 @@ Für fehlerhafte Ergebnisse oder daraus entstehende Konsequenzen wird keine Haft
 * Benötigt zusätzlich das externe Package **matplotlib**
 * Installation des Packages erfolgt je nach System manuell oder automatisch
 
-* **Link zu GeoMathe_Rechner_Basic** Repository: https://github.com/j-breitler/GeoMathe_Rechner_Advanced.git
+* **Link zu GeoMathe_Rechner_Advanced** Repository: https://github.com/j-breitler/GeoMathe_Rechner_Advanced.git
 
 > 💡 Tipp: Wie man Python‑Packages installiert, kann einfach gegoogelt oder mithilfe einer KI nachgeschlagen werden.
 
